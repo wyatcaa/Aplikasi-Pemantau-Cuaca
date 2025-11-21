@@ -7,8 +7,14 @@ environment:
   sdk: ^3.9.2
 
 dependencies:
+  fl_chart: ^1.1.1
   flutter:
     sdk: flutter
+  http: ^1.6.0
+  intl: ^0.20.2
+  path: ^1.9.1
+  shared_preferences: ^2.5.3
+  sqflite: ^2.4.2
 
 dev_dependencies:
   flutter_test:
