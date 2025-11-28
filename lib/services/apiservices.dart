@@ -39,7 +39,7 @@ class WeatherService {
       final weatherUrl = Uri.parse(
         "$_weatherBaseUrl?latitude=$lat&longitude=$lon"
         "&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m"
-        "&hourly=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m"
+        "&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,wind_speed_10m"
         "&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum"
         "&timezone=auto" 
       );

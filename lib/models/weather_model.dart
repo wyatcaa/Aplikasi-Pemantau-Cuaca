@@ -33,6 +33,7 @@ class CurrentWeather {
   final double pressure;
   // UV Index butuh request khusus di params Open-Meteo
   final double? uvIndex;
+  final double rain;
 
   CurrentWeather({
     required this.temp,
@@ -42,6 +43,7 @@ class CurrentWeather {
     required this.humidity,
     required this.pressure,
     this.uvIndex,
+    required this.rain,
   });
 
   factory CurrentWeather.fromJson(Map<String, dynamic> json) {
@@ -52,6 +54,7 @@ class CurrentWeather {
       windDirection: json['wind_direction_10m'] ?? 0,
       humidity: json['relative_humidity_2m'] ?? 0,
       pressure: (json['surface_pressure'] ?? 0).toDouble(),
+      rain: (json['precipitation'] ?? 0).toDouble(),
     );
   }
 }
@@ -74,7 +77,8 @@ class HourlyWeather {
         json['temperature_2m']?.map((x) => x?.toDouble() ?? 0.0) ?? [],
       ),
       precipitation: List<double>.from(
-        json['precipitation']?.map((x) => x?.toDouble() ?? 0.0) ?? [],
+        json['precipitation_probability']?.map((x) => x?.toDouble() ?? 0.0) ??
+            [],
       ),
     );
   }

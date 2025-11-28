@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:meteo/models/location_model.dart';
 import 'package:meteo/models/weather_model.dart';
 import 'package:meteo/services/apiservices.dart';
 import 'package:meteo/helpers/weather_helper.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:meteo/services/dbservices.dart';
 
-// --- PALET WARNA (SAMA SEPERTI HOME) ---
 const Color kBgTop = Color(0xFF6BAAFC);
 const Color kBgBottom = Color(0xFF3F82E8);
 const Color kCardBg = Color(0x25FFFFFF);
@@ -14,7 +15,6 @@ const Color kAccentBlue = Color(0xFFB3D4FF);
 const Color kAccentYellow = Color(0xFFFFD56F);
 
 class DetailPage extends StatefulWidget {
-  // Menerima parameter lokasi {lat, lon, name(optional)}
   final dynamic loc;
 
   const DetailPage({super.key, required this.loc});
@@ -24,39 +24,61 @@ class DetailPage extends StatefulWidget {
 }
 
 class _DetailPageState extends State<DetailPage> {
-  // --- State Variables ---
   WeatherModel? _weather;
   bool _isLoading = true;
   String _errorMessage = '';
   String _locationName = "Loading...";
-  
-  // Status Bookmark
+  final DBService _dbService = DBService();
   bool _isBookmarked = false;
 
-  // Instance Service
   final WeatherService _weatherService = WeatherService();
 
   @override
   void initState() {
     super.initState();
     _loadWeatherData();
-    // TODO: Cek database apakah lokasi ini sudah dibookmark sebelumnya
+    _checkBookmarkStatus();
   }
 
-  // --- Fungsi Bookmark ---
-  void _toggleBookmark() {
+  Future<void> _checkBookmarkStatus() async {
+    double lat = double.parse(widget.loc['lat'].toString());
+    double lon = double.parse(widget.loc['lon'].toString());
+    bool exists = await _dbService.isBookmarked(lat, lon);
+    setState(() {
+      _isBookmarked = exists;
+    });
+  }
+
+  void _toggleBookmark() async {
+    double lat = double.parse(widget.loc['lat'].toString());
+    double lon = double.parse(widget.loc['lon'].toString());
+
+    List<String> parts = _locationName.split(',');
+    String name = parts[0].trim();
+    String country = parts.length > 1 ? parts[1].trim() : "";
+
+    LocationModel locationData = LocationModel(
+      name: name,
+      country: country,
+      latitude: lat,
+      longitude: lon, timezone: '',
+    );
+    
+    if (_isBookmarked) {
+      await _dbService.removeBookmark(lat, lon);
+      if(mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Removed from saved locations")));
+      }
+    } else {
+      await _dbService.addBookmark(locationData);
+      if(mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Location saved!")));
+      }
+    }
+
     setState(() {
       _isBookmarked = !_isBookmarked;
     });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_isBookmarked ? "Location saved!" : "Location removed."),
-        duration: const Duration(seconds: 1),
-        backgroundColor: Colors.black54,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   // --- Fungsi Load Data ---
@@ -67,7 +89,8 @@ class _DetailPageState extends State<DetailPage> {
       double lon = double.parse(widget.loc['lon'].toString());
 
       // 2. Set Nama Kota
-      if (widget.loc['name'] != null && widget.loc['name'].toString().isNotEmpty) {
+      if (widget.loc['name'] != null &&
+          widget.loc['name'].toString().isNotEmpty) {
         setState(() {
           _locationName = widget.loc['name'];
         });
@@ -76,7 +99,8 @@ class _DetailPageState extends State<DetailPage> {
           List<Placemark> placemarks = await placemarkFromCoordinates(lat, lon);
           if (placemarks.isNotEmpty) {
             Placemark place = placemarks[0];
-            String city = place.locality ?? place.subAdministrativeArea ?? "Unknown";
+            String city =
+                place.locality ?? place.subAdministrativeArea ?? "Unknown";
             String country = place.isoCountryCode ?? "";
             setState(() {
               _locationName = "$city, $country";
@@ -359,7 +383,11 @@ class _DetailPageState extends State<DetailPage> {
             value: current.humidity.toString(),
             unit: "%",
             subtitle: "Dew point -",
-            visualContent: Icon(Icons.water_drop, color: kAccentBlue, size: iconSize),
+            visualContent: Icon(
+              Icons.water_drop,
+              color: kAccentBlue,
+              size: iconSize,
+            ),
           ),
           _buildConditionCard(
             title: "AQI (US)",
@@ -367,7 +395,7 @@ class _DetailPageState extends State<DetailPage> {
             unit: "",
             subtitle: aqi < 50 ? "Good" : "Moderate",
             visualContent: Icon(
-              Icons.grain, 
+              Icons.grain,
               color: aqi < 50 ? Colors.green : Colors.orange,
               size: iconSize,
             ),
@@ -377,7 +405,11 @@ class _DetailPageState extends State<DetailPage> {
             value: current.pressure.round().toString(),
             unit: "hPa",
             subtitle: "Surface",
-            visualContent: Icon(Icons.speed, color: kAccentBlue, size: iconSize),
+            visualContent: Icon(
+              Icons.speed,
+              color: kAccentBlue,
+              size: iconSize,
+            ),
           ),
         ],
       ),
@@ -424,7 +456,10 @@ class _DetailPageState extends State<DetailPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Sunrise", style: TextStyle(color: kTextGrey, fontSize: 12)),
+                  const Text(
+                    "Sunrise",
+                    style: TextStyle(color: kTextGrey, fontSize: 12),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     sunriseText,
@@ -457,7 +492,7 @@ class _DetailPageState extends State<DetailPage> {
                                 color: kAccentYellow.withOpacity(0.6),
                                 blurRadius: 10,
                                 spreadRadius: 2,
-                              )
+                              ),
                             ],
                           ),
                         ),
@@ -469,7 +504,10 @@ class _DetailPageState extends State<DetailPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text("Sunset", style: TextStyle(color: kTextGrey, fontSize: 12)),
+                  const Text(
+                    "Sunset",
+                    style: TextStyle(color: kTextGrey, fontSize: 12),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     sunsetText,
@@ -611,10 +649,7 @@ class _DetailPageState extends State<DetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(color: kTextWhite, fontSize: 14),
-          ),
+          Text(title, style: const TextStyle(color: kTextWhite, fontSize: 14)),
           Expanded(child: Center(child: visualContent)),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
