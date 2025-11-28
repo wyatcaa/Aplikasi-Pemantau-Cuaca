@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:crypto/crypto.dart';
+import 'package:meteo/screens/navigation.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/dbservices.dart';
 import 'registerpage.dart';
-import '../widgets/bottom_nav_widget.dart';
 import '../models/user_model.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -71,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const BottomNavWidget()),
+        MaterialPageRoute(builder: (_) => const Navigation()),
       );
     } else {
       if (!mounted) return;

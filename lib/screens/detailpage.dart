@@ -1,34 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:meteo/models/weather_model.dart';
-import 'package:meteo/screens/detailpage.dart';
 import 'package:meteo/services/apiservices.dart';
 import 'package:meteo/helpers/weather_helper.dart';
-// Package tambahan untuk Lokasi
-import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 
-// --- PALET WARNA (SOFT SKY BLUE GRADIENT) ---
-const Color kBgTop = Color(0xFF6BAAFC); // Biru Langit Cerah
-const Color kBgBottom = Color(0xFF3F82E8); // Biru Laut
-const Color kCardBg = Color(0x25FFFFFF); // Putih Transparan (Glass Effect)
+// --- PALET WARNA (SAMA SEPERTI HOME) ---
+const Color kBgTop = Color(0xFF6BAAFC);
+const Color kBgBottom = Color(0xFF3F82E8);
+const Color kCardBg = Color(0x25FFFFFF);
 const Color kTextWhite = Colors.white;
-const Color kTextGrey = Color(0xFFD4E4FF); // Putih kebiruan
+const Color kTextGrey = Color(0xFFD4E4FF);
 const Color kAccentBlue = Color(0xFFB3D4FF);
 const Color kAccentYellow = Color(0xFFFFD56F);
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class DetailPage extends StatefulWidget {
+  // Menerima parameter lokasi {lat, lon, name(optional)}
+  final dynamic loc;
+
+  const DetailPage({super.key, required this.loc});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<DetailPage> createState() => _DetailPageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _DetailPageState extends State<DetailPage> {
   // --- State Variables ---
   WeatherModel? _weather;
   bool _isLoading = true;
   String _errorMessage = '';
-  String _locationName = "Detecting Location...";
+  String _locationName = "Loading...";
+  
+  // Status Bookmark
+  bool _isBookmarked = false;
 
   // Instance Service
   final WeatherService _weatherService = WeatherService();
@@ -37,69 +40,57 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _loadWeatherData();
+    // TODO: Cek database apakah lokasi ini sudah dibookmark sebelumnya
   }
 
-  // --- 1. Fungsi Cek Izin & Ambil Koordinat GPS ---
-  Future<Position> _determinePosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+  // --- Fungsi Bookmark ---
+  void _toggleBookmark() {
+    setState(() {
+      _isBookmarked = !_isBookmarked;
+    });
 
-    // Cek GPS Hidup/Mati
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
-    }
-
-    // Cek Izin Aplikasi
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error('Location permissions are permanently denied.');
-    }
-
-    // Ambil lokasi saat ini
-    return await Geolocator.getCurrentPosition();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_isBookmarked ? "Location saved!" : "Location removed."),
+        duration: const Duration(seconds: 1),
+        backgroundColor: Colors.black54,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
-  // --- 2. Fungsi Utama Load Data ---
+  // --- Fungsi Load Data ---
   Future<void> _loadWeatherData() async {
     try {
-      // A. Ambil Posisi
-      Position position = await _determinePosition();
+      // 1. Ambil Lat/Lon dari Parameter
+      double lat = double.parse(widget.loc['lat'].toString());
+      double lon = double.parse(widget.loc['lon'].toString());
 
-      // B. Ambil Nama Kota (Geocoding)
-      try {
-        List<Placemark> placemarks = await placemarkFromCoordinates(
-          position.latitude,
-          position.longitude,
-        );
-
-        if (placemarks.isNotEmpty) {
-          Placemark place = placemarks[0];
-          String city =
-              place.locality ?? place.subAdministrativeArea ?? "Unknown";
-          String country = place.isoCountryCode ?? "";
+      // 2. Set Nama Kota
+      if (widget.loc['name'] != null && widget.loc['name'].toString().isNotEmpty) {
+        setState(() {
+          _locationName = widget.loc['name'];
+        });
+      } else {
+        try {
+          List<Placemark> placemarks = await placemarkFromCoordinates(lat, lon);
+          if (placemarks.isNotEmpty) {
+            Placemark place = placemarks[0];
+            String city = place.locality ?? place.subAdministrativeArea ?? "Unknown";
+            String country = place.isoCountryCode ?? "";
+            setState(() {
+              _locationName = "$city, $country";
+            });
+          }
+        } catch (_) {
           setState(() {
-            _locationName = "$city, $country";
+            _locationName = "Unknown Location";
           });
         }
-      } catch (e) {
-        setState(() {
-          _locationName = "My Location"; // Fallback jika gagal ambil nama kota
-        });
       }
 
-      // C. Ambil Data Cuaca API
-      final data = await _weatherService.getWeatherFull(
-        position.latitude,
-        position.longitude,
-      );
+      // 3. Ambil Data API
+      final data = await _weatherService.getWeatherFull(lat, lon);
 
       setState(() {
         _weather = data;
@@ -120,17 +111,7 @@ class _HomePageState extends State<HomePage> {
       return Scaffold(
         backgroundColor: kBgBottom,
         body: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(color: kAccentYellow),
-              SizedBox(height: 16),
-              Text(
-                "Getting location & weather...",
-                style: TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
+          child: CircularProgressIndicator(color: kAccentYellow),
         ),
       );
     }
@@ -139,31 +120,21 @@ class _HomePageState extends State<HomePage> {
     if (_errorMessage.isNotEmpty) {
       return Scaffold(
         backgroundColor: kBgBottom,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: kTextWhite),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white, size: 50),
-                const SizedBox(height: 16),
-                Text(
-                  _errorMessage,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _isLoading = true;
-                      _errorMessage = '';
-                    });
-                    _loadWeatherData();
-                  },
-                  child: const Text("Try Again"),
-                ),
-              ],
+            child: Text(
+              _errorMessage,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         ),
@@ -173,7 +144,6 @@ class _HomePageState extends State<HomePage> {
     // --- TAMPILAN UTAMA ---
     return Container(
       decoration: const BoxDecoration(
-        // Background Gradiasi
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -181,12 +151,16 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       child: Scaffold(
-        backgroundColor:
-            Colors.transparent, // Transparan biar kena gradasi container
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          leading: const Icon(Icons.location_on_outlined, color: kTextWhite),
+          // Tombol Back
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: kTextWhite),
+            onPressed: () => Navigator.pop(context),
+          ),
+          // Judul Kota
           title: Text(
             _locationName,
             style: const TextStyle(
@@ -194,14 +168,17 @@ class _HomePageState extends State<HomePage> {
               fontWeight: FontWeight.w500,
             ),
           ),
+          // Tombol Bookmark
           actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: CircleAvatar(
-                backgroundColor: Colors.white24,
-                child: const Text("F", style: TextStyle(color: kAccentYellow)),
+            IconButton(
+              onPressed: _toggleBookmark,
+              icon: Icon(
+                _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                color: kAccentYellow,
+                size: 28,
               ),
             ),
+            const SizedBox(width: 8),
           ],
         ),
         body: SingleChildScrollView(
@@ -279,11 +256,8 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildHourlyForecastCard() {
     final hourly = _weather!.hourly;
-
-    // Logic: Mulai dari jam sekarang
     int currentHour = DateTime.now().hour;
     int count = 24;
-    // Cek sisa data agar tidak error array index
     if (currentHour + count > hourly.time.length) {
       count = hourly.time.length - currentHour;
     }
@@ -301,10 +275,8 @@ class _HomePageState extends State<HomePage> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: List.generate(count, (i) {
-                // Geser index berdasarkan jam sekarang
                 int index = currentHour + i;
                 bool isNow = i == 0;
-
                 return _buildHourlyItem(
                   time: isNow
                       ? "Now"
@@ -360,8 +332,6 @@ class _HomePageState extends State<HomePage> {
   Widget _buildCurrentConditionsGrid() {
     final current = _weather!.current;
     final aqi = _weather!.airQuality?.usAqi ?? 0;
-
-    // Ukuran Icon lebih besar
     double iconSize = 50.0;
 
     return Padding(
@@ -372,7 +342,7 @@ class _HomePageState extends State<HomePage> {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 1.2, // Kotak agak tinggi biar ikon muat
+        childAspectRatio: 1.2,
         children: [
           _buildConditionCard(
             title: "Wind",
@@ -389,11 +359,7 @@ class _HomePageState extends State<HomePage> {
             value: current.humidity.toString(),
             unit: "%",
             subtitle: "Dew point -",
-            visualContent: Icon(
-              Icons.water_drop,
-              color: kAccentBlue,
-              size: iconSize,
-            ),
+            visualContent: Icon(Icons.water_drop, color: kAccentBlue, size: iconSize),
           ),
           _buildConditionCard(
             title: "AQI (US)",
@@ -401,8 +367,8 @@ class _HomePageState extends State<HomePage> {
             unit: "",
             subtitle: aqi < 50 ? "Good" : "Moderate",
             visualContent: Icon(
-              Icons.blur_on,
-              color: Colors.white38,
+              Icons.grain, 
+              color: aqi < 50 ? Colors.green : Colors.orange,
               size: iconSize,
             ),
           ),
@@ -411,11 +377,7 @@ class _HomePageState extends State<HomePage> {
             value: current.pressure.round().toString(),
             unit: "hPa",
             subtitle: "Surface",
-            visualContent: Icon(
-              Icons.speed,
-              color: kAccentBlue,
-              size: iconSize,
-            ),
+            visualContent: Icon(Icons.speed, color: kAccentBlue, size: iconSize),
           ),
         ],
       ),
@@ -423,43 +385,49 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildSunriseSunsetCard() {
-    // Pastikan data _weather dan daily tidak null sebelum diakses
     if (_weather == null ||
         _weather!.daily.sunrise.isEmpty ||
         _weather!.daily.sunset.isEmpty) {
-      return const SizedBox(); // Atau widget placeholder lain jika data belum siap
+      return const SizedBox();
     }
 
-    // Ambil data hari ini (index 0) dan format waktunya
-    String sunrise = WeatherUtils.formatTime(_weather!.daily.sunrise[0]);
-    String sunset = WeatherUtils.formatTime(_weather!.daily.sunset[0]);
+    final DateTime sunriseTime = DateTime.parse(_weather!.daily.sunrise[0]);
+    final DateTime sunsetTime = DateTime.parse(_weather!.daily.sunset[0]);
+    final DateTime now = DateTime.now();
+
+    double alignX = -1.0;
+
+    if (now.isAfter(sunriseTime) && now.isBefore(sunsetTime)) {
+      int totalDayMinutes = sunsetTime.difference(sunriseTime).inMinutes;
+      int passedMinutes = now.difference(sunriseTime).inMinutes;
+      double progress = passedMinutes / totalDayMinutes;
+      alignX = (progress * 2) - 1;
+    } else if (now.isAfter(sunsetTime)) {
+      alignX = 1.0;
+    }
+
+    String sunriseText = WeatherUtils.formatTime(_weather!.daily.sunrise[0]);
+    String sunsetText = WeatherUtils.formatTime(_weather!.daily.sunset[0]);
 
     return _buildCardContainer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Judul Card
           const Text(
             "Sunrise & sunset",
             style: TextStyle(color: kTextWhite, fontSize: 16),
           ),
-          const SizedBox(height: 24), // Jarak sedikit diperbesar biar lega
-          // Row Utama: Kiri (Sunrise) - Tengah (Visual) - Kanan (Sunset)
+          const SizedBox(height: 24),
           Row(
-            // Align items ke bawah agar teks jam sejajar dengan garis horizon
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // --- BAGIAN KIRI: SUNRISE ---
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Sunrise",
-                    style: TextStyle(color: kTextGrey, fontSize: 12),
-                  ),
+                  const Text("Sunrise", style: TextStyle(color: kTextGrey, fontSize: 12)),
                   const SizedBox(height: 4),
                   Text(
-                    sunrise,
+                    sunriseText,
                     style: const TextStyle(
                       color: kTextWhite,
                       fontSize: 20,
@@ -468,49 +436,43 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-
-              // --- BAGIAN TENGAH: VISUAL HORIZON ---
-              // Gunakan Expanded agar mengisi ruang kosong di antara kiri dan kanan
               Expanded(
                 child: Container(
-                  height: 60, // Tinggi area visual disesuaikan
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                  ), // Jarak kiri kanan
+                  height: 60,
+                  margin: const EdgeInsets.symmetric(horizontal: 12),
                   child: Stack(
                     alignment: Alignment.bottomCenter,
                     children: [
-                      // Garis Horizon
                       Container(height: 1, color: Colors.white24),
-                      // Ikon Matahari
-                      // Dibungkus Padding biar agak naik sedikit di atas garis
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        // Saya ganti iconnya jadi wb_sunny biar lebih pas,
-                        // tapi kalau mau tetap sunny_snowing silakan diubah balik.
-                        child: Icon(
-                          Icons
-                              .wb_sunny_outlined, // Atau gunakan icon pilihanmu sebelumnya
-                          color: kAccentYellow,
-                          size: 32,
+                      Align(
+                        alignment: Alignment(alignX, 1.0),
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 4.0),
+                          child: Icon(
+                            Icons.wb_sunny_outlined,
+                            color: kAccentYellow,
+                            size: 32,
+                            shadows: [
+                              BoxShadow(
+                                color: kAccentYellow.withOpacity(0.6),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              )
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-
-              // --- BAGIAN KANAN: SUNSET ---
               Column(
-                crossAxisAlignment: CrossAxisAlignment.end, // Teks rata kanan
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text(
-                    "Sunset",
-                    style: TextStyle(color: kTextGrey, fontSize: 12),
-                  ),
+                  const Text("Sunset", style: TextStyle(color: kTextGrey, fontSize: 12)),
                   const SizedBox(height: 4),
                   Text(
-                    sunset,
+                    sunsetText,
                     style: const TextStyle(
                       color: kTextWhite,
                       fontSize: 20,
@@ -542,7 +504,7 @@ class _HomePageState extends State<HomePage> {
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
-        color: kCardBg, // Warna Glass
+        color: kCardBg,
         borderRadius: BorderRadius.circular(24),
       ),
       child: child,
@@ -633,7 +595,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Desain Card Grid (Icon Center)
   Widget _buildConditionCard({
     required String title,
     required String value,
@@ -650,10 +611,11 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(color: kTextWhite, fontSize: 14)),
-          // Ikon di Tengah
+          Text(
+            title,
+            style: const TextStyle(color: kTextWhite, fontSize: 14),
+          ),
           Expanded(child: Center(child: visualContent)),
-          // Nilai di Bawah
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,

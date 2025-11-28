@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meteo/screens/homepage.dart';
+import 'package:meteo/screens/navigation.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.light,
       ),
       debugShowCheckedModeBanner: false,
-      home: const HomePage(),
+      home: const Navigation(),
     );
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:meteo/screens/detailpage.dart';
 import '../models/location_model.dart';
 import '../widgets/search_widget.dart';
-import 'detailscreen.dart';
 import '../services/dbservices.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -38,7 +38,7 @@ void _onSelect(LocationModel loc) async {
   await Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (_) => DetailScreen(location: loc),
+      builder: (_) => DetailPage(loc: loc),
     ),
   );
   if (mounted) {
