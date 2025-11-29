@@ -103,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Masuk untuk melihat informasi cuaca terkini!", 
+              "Login untuk melihat informasi cuaca terkini!", 
               style: TextStyle(
                 color: Colors.grey.shade700,
                 fontSize: 14,
@@ -189,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text(
-                        "Masuk",
+                        "Login",
                         style: TextStyle(fontSize: 18, color: Colors.white),
                       ),
               ),

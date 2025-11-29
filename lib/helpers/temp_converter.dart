@@ -8,7 +8,6 @@ class TempConverter {
 
     double c = value;
 
-    // Convert TO CELSIUS first
     switch (from) {
       case 'f':
         c = (value - 32) * 5 / 9;
@@ -16,19 +15,13 @@ class TempConverter {
       case 'k':
         c = value - 273.15;
         break;
-      case 'r':
-        c = value * 5 / 4;
-        break;
     }
 
-    // Convert FROM CELSIUS to target
     switch (to) {
       case 'f':
         return c * 9 / 5 + 32;
       case 'k':
         return c + 273.15;
-      case 'r':
-        return c * 4 / 5;
       default:
         return c;
     }

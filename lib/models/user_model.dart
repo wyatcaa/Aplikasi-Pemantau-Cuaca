@@ -3,7 +3,7 @@ class UserModel {
   String username;
   String email;
   String password;
-  String tempUnit; // ★ tambahan
+  String tempUnit; 
   String? photoPath;
 
   UserModel({
@@ -11,17 +11,17 @@ class UserModel {
     required this.username,
     required this.email,
     required this.password,
-    required this.tempUnit, // ★ tambahan
+    required this.tempUnit, 
     this.photoPath,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
       id: map['id'],
-      username: map['username'], // sesuai DB kamu
+      username: map['username'],
       email: map['email'],
       password: map['password'],
-      tempUnit: map['tempUnit'] ?? 'c', // ★ default jika null
+      tempUnit: map['tempUnit'] ?? 'c', 
       photoPath: map['photoPath'],
     );
   }
@@ -32,7 +32,7 @@ class UserModel {
       'username': username,
       'email': email,
       'password': password,
-      'tempUnit': tempUnit, // ★ tambahan
+      'tempUnit': tempUnit, 
       'photoPath': photoPath,
     };
   }

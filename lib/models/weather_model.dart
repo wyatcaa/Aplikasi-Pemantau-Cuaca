@@ -2,8 +2,7 @@ class WeatherModel {
   final CurrentWeather current;
   final HourlyWeather hourly;
   final DailyWeather daily;
-  final AirQuality? airQuality; // Optional, diambil dari API terpisah
-
+  final AirQuality? airQuality; 
   WeatherModel({
     required this.current,
     required this.hourly,
@@ -31,7 +30,6 @@ class CurrentWeather {
   final int windDirection;
   final int humidity;
   final double pressure;
-  // UV Index butuh request khusus di params Open-Meteo
   final double? uvIndex;
   final double rain;
 
@@ -120,7 +118,6 @@ class AirQuality {
   AirQuality({required this.usAqi});
 
   factory AirQuality.fromJson(Map<String, dynamic> json) {
-    // Mengambil index ke-0 karena current data
     final current = json['current'] ?? {};
     return AirQuality(usAqi: (current['us_aqi'] ?? 0).toDouble());
   }

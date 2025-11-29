@@ -1,9 +1,19 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:meteo/screens/developers_page.dart';
 import '../services/dbservices.dart';
 import '../models/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'loginPage.dart';
+
+const Color kBgTop = Color(0xFF6BAAFC);
+const Color kBgBottom = Color(0xFF3F82E8);
+const Color kCardBg = Color(0x25FFFFFF);
+const Color kTextWhite = Colors.white;
+const Color kTextGrey = Color(0xFFD4E4FF);
+const Color kAccentBlue = Color(0xFFB3D4FF);
+const Color kAccentYellow = Color(0xFFFFD56F);
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -21,7 +31,6 @@ class _ProfilePageState extends State<ProfilePage> {
   String? photoPath;
   bool loading = true;
 
-  // dropdown suhu
   final List<String> units = ["c", "f", "k"];
   String selectedUnit = "c";
 
@@ -46,9 +55,6 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => loading = false);
   }
 
-  // -----------------------
-  // SAVE INDIVIDUAL FIELD
-  // -----------------------
   Future<void> _saveField({String? username, String? email, String? password}) async {
     if (user == null) return;
 
@@ -62,7 +68,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     await DBService().updateUser(user!);
-    setState(() {}); // refresh UI
+    setState(() {});
   }
 
   Future<void> _saveUnit(String unit) async {
@@ -85,9 +91,6 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {});
   }
 
-  // -----------------------
-  // PICK PHOTO
-  // -----------------------
   Future<void> _pickPhoto(ImageSource source) async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: source, imageQuality: 70);
@@ -95,6 +98,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (picked == null) return;
 
     setState(() => photoPath = picked.path);
+
     if (user != null) {
       user = UserModel(
         id: user!.id,
@@ -115,7 +119,7 @@ class _ProfilePageState extends State<ProfilePage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
-            leading: const Icon(Icons.photo),
+            leading: Icon(Icons.photo, color: kBgTop),
             title: const Text("Pilih dari Galeri"),
             onTap: () {
               Navigator.pop(context);
@@ -123,7 +127,7 @@ class _ProfilePageState extends State<ProfilePage> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.camera_alt),
+            leading: Icon(Icons.camera_alt, color: kBgTop),
             title: const Text("Ambil Foto Kamera"),
             onTap: () {
               Navigator.pop(context);
@@ -137,154 +141,294 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Hapus session / login info
-    // Tambahkan navigasi ke login page
-    Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    await prefs.clear();
+
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    }
   }
 
-  // -----------------------
-  // UI
-  // -----------------------
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Profil & Pengaturan")),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // FOTO PROFIL
-                  Center(
-                    child: GestureDetector(
-                      onTap: _showPhotoOptions,
-                      child: CircleAvatar(
-                        radius: 60,
-                        backgroundImage:
-                            photoPath != null ? FileImage(File(photoPath!)) : null,
-                        child: photoPath == null
-                            ? const Icon(Icons.person, size: 60)
-                            : null,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+  Future<void> _showEditDialog({
+    required String label,
+    required TextEditingController controller,
+    required Future<void> Function() onSave,
+    bool obscureText = false,
+  }) async {
+    final tempController = TextEditingController(text: controller.text);
 
-                  // USERNAME
-                  _buildEditableField(
-                    label: "Nama",
-                    controller: nameC,
-                    onSave: () => _saveField(username: nameC.text.trim()),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // EMAIL
-                  _buildEditableField(
-                    label: "Email",
-                    controller: emailC,
-                    onSave: () => _saveField(email: emailC.text.trim()),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // PASSWORD
-                  _buildEditableField(
-                    label: "Password",
-                    controller: passC,
-                    obscureText: true,
-                    onSave: () => _saveField(password: passC.text.trim()),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // -----------------------
-                  // DROPDOWN SUHU
-                  // -----------------------
-                  const Text("Pengaturan Suhu",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<String>(
-                    value: selectedUnit,
-                    decoration: const InputDecoration(
-                      labelText: "Satuan Suhu",
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: "c", child: Text("Celcius (°C)")),
-                      DropdownMenuItem(value: "f", child: Text("Fahrenheit (°F)")),
-                      DropdownMenuItem(value: "k", child: Text("Kelvin (K)")),
-                    ],
-                    onChanged: (v) {
-                      if (v != null) _saveUnit(v);
-                    },
-                  ),
-                  const SizedBox(height: 30),
-
-                  // -----------------------
-                  // MENU TENTANG DEVELOPER
-                  // -----------------------
-                  const Text("Tentang Aplikasi",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  ListTile(
-                    leading: const Icon(Icons.info_outline),
-                    title: const Text("Versi Aplikasi"),
-                    subtitle: const Text("1.0.0"),
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.email_outlined),
-                    title: const Text("Hubungi Developer"),
-                    subtitle: const Text("seascopecsupport@email.com"),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // -----------------------
-                  // LOGOUT
-                  // -----------------------
-                  Center(
-                    child: ElevatedButton.icon(
-                      onPressed: _logout,
-                      icon: const Icon(Icons.logout),
-                      label: const Text("Logout"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                ],
-              ),
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: kBgTop.withOpacity(0.9),
+          title: Text('Ubah $label', style: const TextStyle(color: kTextWhite)),
+          content: TextField(
+            controller: tempController,
+            obscureText: obscureText,
+            style: const TextStyle(color: kTextWhite),
+            decoration: InputDecoration(
+              labelText: label,
+              labelStyle: const TextStyle(color: kTextGrey),
+              filled: true,
+              fillColor: Colors.black.withOpacity(0.3),
+              enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: kTextWhite.withOpacity(0.5))),
+              focusedBorder: const OutlineInputBorder(
+                  borderSide: BorderSide(color: kAccentYellow)),
             ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Batal', style: TextStyle(color: kAccentYellow)),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: kAccentYellow, foregroundColor: Colors.black),
+              child: const Text('Simpan'),
+              onPressed: () async {
+                controller.text = tempController.text.trim();
+                await onSave();
+                if (mounted) Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
+  // -------------------------------
+  // ** FIELD EDITABLE FIX**
+  // -------------------------------
   Widget _buildEditableField({
     required String label,
     required TextEditingController controller,
-    required VoidCallback onSave,
+    required Future<void> Function() onSave,
     bool obscureText = false,
+    TextInputType keyboardType = TextInputType.text,
   }) {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
+    return TextField(
+      controller: controller,
+      readOnly: true, // <-- memperbaiki: sekarang bisa di-tap
+      obscureText: obscureText,
+      obscuringCharacter: '•',
+      style: const TextStyle(color: kTextWhite, fontWeight: FontWeight.w600),
+      keyboardType: keyboardType,
+      onTap: () => _showEditDialog(
+        label: label,
+        controller: controller,
+        onSave: onSave,
+        obscureText: obscureText,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: kTextGrey),
+        filled: true,
+        fillColor: kCardBg,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
+        ),
+        suffixIcon: IconButton(
+          icon: const Icon(Icons.edit, color: kAccentYellow),
+          onPressed: () => _showEditDialog(
+            label: label,
             controller: controller,
+            onSave: onSave,
             obscureText: obscureText,
-            decoration: InputDecoration(
-              labelText: label,
-              border: const OutlineInputBorder(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [kBgTop, kBgBottom],
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+          title: const Text(
+            "Profile",
+            style: TextStyle(
+              color: kTextWhite,
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
             ),
           ),
         ),
-        const SizedBox(width: 8),
-        IconButton(
-          icon: const Icon(Icons.save),
-          onPressed: onSave,
-          color: Colors.green,
-        ),
-      ],
+        body: loading
+            ? const Center(child: CircularProgressIndicator(color: kAccentYellow))
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Stack(
+                        children: [
+                          GestureDetector(
+                            onTap: _showPhotoOptions,
+                            child: CircleAvatar(
+                              radius: 60,
+                              backgroundColor: kTextWhite.withOpacity(0.1),
+                              backgroundImage:
+                                  photoPath != null ? FileImage(File(photoPath!)) : null,
+                              child: photoPath == null
+                                  ? Icon(Icons.person, size: 60, color: kTextGrey)
+                                  : null,
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: InkWell(
+                              onTap: _showPhotoOptions,
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: kBgTop,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: kTextWhite, width: 2),
+                                ),
+                                child: const Icon(Icons.camera_alt,
+                                    color: Colors.white, size: 20),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    _buildEditableField(
+                      label: "Nama Pengguna",
+                      controller: nameC,
+                      onSave: () => _saveField(username: nameC.text.trim()),
+                    ),
+                    const SizedBox(height: 12),
+
+                    _buildEditableField(
+                      label: "Email",
+                      controller: emailC,
+                      onSave: () => _saveField(email: emailC.text.trim()),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 12),
+
+                    _buildEditableField(
+                      label: "Password",
+                      controller: passC,
+                      obscureText: true,
+                      onSave: () => _saveField(password: passC.text.trim()),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    const Text(
+                      "Pengaturan Suhu",
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: kTextWhite),
+                    ),
+                    const SizedBox(height: 10),
+
+                    DropdownButtonFormField<String>(
+                      value: selectedUnit,
+                      iconEnabledColor: kTextWhite,
+                      style: const TextStyle(color: kTextWhite, fontSize: 16),
+                      dropdownColor: kBgTop,
+                      decoration: InputDecoration(
+                        labelText: "Satuan Suhu",
+                        labelStyle: const TextStyle(color: kTextGrey),
+                        filled: true,
+                        fillColor: kCardBg,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                            value: "c",
+                            child: Text("Celcius (°C)",
+                                style: const TextStyle(color: kTextWhite))),
+                        DropdownMenuItem(
+                            value: "f",
+                            child: Text("Fahrenheit (°F)",
+                                style: const TextStyle(color: kTextWhite))),
+                        DropdownMenuItem(
+                            value: "k",
+                            child: Text("Kelvin (K)",
+                                style: const TextStyle(color: kTextWhite))),
+                      ],
+                      onChanged: (v) {
+                        if (v != null) _saveUnit(v);
+                      },
+                    ),
+
+                    const SizedBox(height: 30),
+                    const Text(
+                      "Tentang Aplikasi",
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: kTextWhite),
+                    ),
+
+                    ListTile(
+                      leading: const Icon(Icons.info_outline, color: kAccentYellow),
+                      title: const Text("Versi Aplikasi",
+                          style: TextStyle(color: kTextWhite)),
+                      subtitle:
+                          const Text("1.0.0", style: TextStyle(color: kTextGrey)),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.code, color: kAccentYellow),
+                      title: const Text("Tentang Developer",
+                          style: TextStyle(color: kTextWhite)),
+                      trailing: const Icon(Icons.arrow_forward_ios,
+                          size: 16, color: kTextWhite),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AboutDeveloperPage()),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    Center(
+                      child: ElevatedButton.icon(
+                        onPressed: _logout,
+                        icon: const Icon(Icons.logout),
+                        label: const Text("Logout"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: kTextWhite,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+                  ],
+                ),
+              ),
+      ),
     );
   }
 }

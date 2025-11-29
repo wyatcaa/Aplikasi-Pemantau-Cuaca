@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class WeatherUtils {
-  // Menerjemahkan WMO Code ke Deskripsi String
   static String getWeatherDescription(int code) {
     switch (code) {
       case 0:
@@ -38,7 +37,6 @@ class WeatherUtils {
     }
   }
 
-  // Menerjemahkan WMO Code ke Icon Flutter
   static IconData getWeatherIcon(int code) {
     switch (code) {
       case 0:
@@ -50,7 +48,7 @@ class WeatherUtils {
         return Icons.cloud;
       case 45:
       case 48:
-        return Icons.foggy; // Butuh icon khusus jika ada
+        return Icons.foggy; 
       case 51:
       case 53:
       case 55:
@@ -62,7 +60,7 @@ class WeatherUtils {
       case 80:
       case 81:
       case 82:
-        return Icons.beach_access; // Hujan deras
+        return Icons.beach_access; 
       case 95:
       case 96:
       case 99:
@@ -72,7 +70,6 @@ class WeatherUtils {
     }
   }
 
-  // Format tanggal ISO (2023-11-21T14:00) jadi Jam (14:00)
   static String formatTime(String isoString) {
     try {
       DateTime dt = DateTime.parse(isoString);
@@ -82,19 +79,17 @@ class WeatherUtils {
     }
   }
 
-  // Format tanggal jadi Nama Hari (Senin, 21 Nov)
   static String formatDate(String isoString) {
     try {
       DateTime dt = DateTime.parse(isoString);
-      // Manual mapping karena intl butuh locale setup yang ribet untuk demo singkat
       List<String> days = [
-        "Senin",
-        "Selasa",
-        "Rabu",
-        "Kamis",
-        "Jumat",
-        "Sabtu",
-        "Minggu",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
       ];
       List<String> months = [
         "Jan",
