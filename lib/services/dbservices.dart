@@ -170,19 +170,33 @@ class DBService {
     return null;
   }
 
-
+  // --- BAGIAN INI YANG DIPERBAIKI ---
   Future<void> addBookmark(LocationModel location) async {
     final db = await database;
     try {
+      // FIX: Mapping Manual
+      // Kita hanya mengambil field yang ada di tabel 'bookmarks'
+      // Agar tidak error "table bookmarks has no column named timezone/currency"
+      final dataToSave = {
+        'name': location.name,
+        'country': location.country,
+        'latitude': location.latitude,
+        'longitude': location.longitude,
+        'created_at': DateTime.now().millisecondsSinceEpoch,
+      };
+
       await db.insert(
         'bookmarks',
-        {...location.toMap(), 'created_at': DateTime.now().millisecondsSinceEpoch},
+        dataToSave,
         conflictAlgorithm: ConflictAlgorithm.replace, // Kalau duplikat, timpa aja
       );
+      print("✅ Sukses Bookmark: ${location.name}");
     } catch (e) {
-      print("Error adding bookmark: $e");
+      print("❌ Error adding bookmark: $e");
     }
   }
+  // ----------------------------------
+
   Future<void> removeBookmark(double lat, double lon) async {
     final db = await database;
     await db.delete(
@@ -191,6 +205,7 @@ class DBService {
       whereArgs: [lat, lon],
     );
   }
+
   Future<bool> isBookmarked(double lat, double lon) async {
     final db = await database;
     final res = await db.query(
@@ -200,9 +215,10 @@ class DBService {
     );
     return res.isNotEmpty;
   }
+
   Future<List<LocationModel>> getBookmarks() async {
     final db = await database;
     final res = await db.query('bookmarks', orderBy: 'created_at DESC');
     return res.map((e) => LocationModel.fromMap(e)).toList();
-  } 
+  }
 }

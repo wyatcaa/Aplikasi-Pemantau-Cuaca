@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:meteo/models/location_model.dart';
 import 'package:meteo/models/weather_model.dart';
-import 'package:meteo/screens/detailpage.dart';
 import 'package:meteo/services/dbservices.dart';
-import 'package:meteo/services/apiservices.dart'; 
+import 'package:meteo/services/apiservices.dart';
+import 'package:meteo/screens/detailpage.dart';
 
-// --- PALET WARNA (SAMA SEPERTI HOME) ---
+// --- PALET WARNA ---
 const Color kBgTop = Color(0xFF6BAAFC);
 const Color kBgBottom = Color(0xFF3F82E8);
-const Color kCardBg = Color(0x25FFFFFF); // Glass Effect
+// Card dibuat sedikit lebih putih (opacity naik dari 0x25 jadi 0x33) biar lebih kontras
+const Color kCardBg = Color(0x33FFFFFF); 
 const Color kTextWhite = Colors.white;
-const Color kTextGrey = Color(0xFFD4E4FF);
+const Color kTextGrey = Color(0xFFE0E6FF); // Grey lebih terang biar kebaca
 const Color kAccentYellow = Color(0xFFFFD56F);
 
 class SavedPage extends StatefulWidget {
@@ -24,8 +25,6 @@ class _SavedPageState extends State<SavedPage> {
   final DBService _dbService = DBService();
   final WeatherService _weatherService = WeatherService();
 
-  // Kita butuh list yang menampung Lokasi DAN Data Cuacanya
-  // Struktur: [{'loc': LocationModel, 'weather': WeatherModel?}]
   List<Map<String, dynamic>> _savedData = [];
   bool _isLoading = true;
 
@@ -35,23 +34,19 @@ class _SavedPageState extends State<SavedPage> {
     _loadSavedLocations();
   }
 
-  // 1. Ambil Bookmark DB + Fetch Cuaca Terkini API
   Future<void> _loadSavedLocations() async {
     setState(() => _isLoading = true);
     
-    // Ambil data lokasi dari Database SQLite
     final bookmarks = await _dbService.getBookmarks();
     List<Map<String, dynamic>> tempData = [];
 
-    // Loop setiap lokasi untuk ambil cuaca real-time
     for (var loc in bookmarks) {
       WeatherModel? weather;
       try {
-        // Panggil API Weather untuk lat/lon lokasi ini
         weather = await _weatherService.getWeatherFull(loc.latitude, loc.longitude);
       } catch (e) {
         print("Gagal ambil cuaca untuk ${loc.name}: $e");
-        weather = null; // Kalau gagal (offline), cuaca null
+        weather = null;
       }
 
       tempData.add({
@@ -68,10 +63,9 @@ class _SavedPageState extends State<SavedPage> {
     }
   }
 
-  // 2. Hapus Lokasi
   Future<void> _deleteLocation(double lat, double lon) async {
     await _dbService.removeBookmark(lat, lon);
-    _loadSavedLocations(); // Refresh list ulang
+    _loadSavedLocations();
   }
 
   @override
@@ -89,17 +83,22 @@ class _SavedPageState extends State<SavedPage> {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: kTextWhite),
-            onPressed: () => Navigator.pop(context),
-          ),
+          // --- PERUBAHAN 1: Hapus Leading & Matikan Otomatis ---
+          automaticallyImplyLeading: false, 
+          // -----------------------------------------------------
+          
+          // --- PERUBAHAN 2: Judul ke Tengah ---
+          centerTitle: true,
           title: const Text(
             "Saved Locations",
             style: TextStyle(
               color: kTextWhite,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.bold,
+              fontSize: 22, // Ukuran font diperbesar dikit
+              letterSpacing: 1.0,
             ),
           ),
+          // ------------------------------------
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator(color: kAccentYellow))
@@ -107,7 +106,7 @@ class _SavedPageState extends State<SavedPage> {
                 ? _buildEmptyState()
                 : ListView.builder(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     itemCount: _savedData.length,
                     itemBuilder: (context, index) {
                       final item = _savedData[index];
@@ -138,20 +137,19 @@ class _SavedPageState extends State<SavedPage> {
   }
 
   Widget _buildLocationCard(LocationModel loc, WeatherModel? weather) {
-    
     String tempStr = "--";
-    IconData weatherIcon = Icons.cloud_off; 
+    IconData weatherIcon = Icons.cloud_off;
 
     if (weather != null) {
       tempStr = "${weather.current.temp.round()}°";
+      double precip = weather.current.rain; // Pastikan model support field ini
       
-      double precip = weather.current.rain ?? 0.0; 
       if (precip > 0.0) {
-        weatherIcon = Icons.umbrella; // Hujan
+        weatherIcon = Icons.umbrella;
       } else if (weather.current.temp > 28) {
-         weatherIcon = Icons.wb_sunny_rounded; // Panas -> Cerah
+         weatherIcon = Icons.wb_sunny_rounded;
       } else {
-         weatherIcon = Icons.cloud; // Sejuk -> Berawan
+         weatherIcon = Icons.cloud;
       }
     }
 
@@ -161,8 +159,12 @@ class _SavedPageState extends State<SavedPage> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        color: Colors.redAccent.withOpacity(0.8),
-        child: const Icon(Icons.delete, color: Colors.white),
+        margin: const EdgeInsets.only(bottom: 16), // Samakan margin dengan card
+        decoration: BoxDecoration(
+          color: Colors.redAccent.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: const Icon(Icons.delete, color: Colors.white, size: 30),
       ),
       onDismissed: (direction) {
         _deleteLocation(loc.latitude, loc.longitude);
@@ -180,18 +182,30 @@ class _SavedPageState extends State<SavedPage> {
                 },
               ),
             ),
-          ).then((_) => _loadSavedLocations()); 
+          ).then((_) => _loadSavedLocations());
         },
         child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
+          // --- PERUBAHAN 3: Desain Card Lebih Pop-Up ---
+          margin: const EdgeInsets.only(bottom: 16), // Jarak antar kartu lebih lega
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: kCardBg,
+            color: kCardBg, 
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white10),
+            // Tambah Border Putih Transparan biar tegas
+            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+            // Tambah Shadow biar ngangkat dari background
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
+          // ---------------------------------------------
           child: Row(
             children: [
+              // KIRI: Nama Lokasi
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,41 +214,62 @@ class _SavedPageState extends State<SavedPage> {
                       loc.name,
                       style: const TextStyle(
                         color: kTextWhite,
-                        fontSize: 18,
+                        fontSize: 20, // Font Nama kota diperbesar
                         fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(offset: Offset(0, 1), blurRadius: 2, color: Colors.black12)
+                        ]
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      loc.country.isNotEmpty ? loc.country : "Lat: ${loc.latitude.toStringAsFixed(2)}",
-                      style: const TextStyle(color: kTextGrey, fontSize: 14),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined, color: kTextGrey, size: 14),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            loc.country.isNotEmpty ? loc.country : "Lat: ${loc.latitude.toStringAsFixed(2)}",
+                            style: const TextStyle(color: kTextGrey, fontSize: 14),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
 
+              // KANAN: Suhu & Ikon
               if (weather != null) ...[
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Icon(weatherIcon, color: kAccentYellow, size: 32),
-                    const SizedBox(height: 4),
-                    Text(
-                      tempStr,
-                      style: const TextStyle(
-                        color: kTextWhite,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w500,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1), // Background tipis di suhu
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(weatherIcon, color: kAccentYellow, size: 36),
+                      const SizedBox(height: 4),
+                      Text(
+                        tempStr,
+                        style: const TextStyle(
+                          color: kTextWhite,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ] else ...[
                  const SizedBox(
-                   width: 20, 
-                   height: 20, 
+                   width: 24, 
+                   height: 24, 
                    child: CircularProgressIndicator(strokeWidth: 2, color: kTextGrey)
                  )
               ]

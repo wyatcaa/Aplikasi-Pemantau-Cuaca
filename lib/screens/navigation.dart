@@ -13,7 +13,12 @@ class Navigation extends StatefulWidget {
 
 class _NavigationState extends State<Navigation> {
   int _currentIndex = 0;
-  final List<Widget> _pages = [HomePage(),SearchScreen(), SavedPage(), ProfilePage()];
+  final List<Widget> _pages = [
+    const HomePage(),
+    const SearchScreen(),
+    const SavedPage(),
+    const ProfilePage()
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +31,14 @@ class _NavigationState extends State<Navigation> {
             _currentIndex = index;
           });
         },
+        // --- TAMBAHKAN PROPERTI INI ---
+        type: BottomNavigationBarType.fixed, // Wajib biar gak putih/hilang
+        backgroundColor: Colors.white,       // Warna latar belakang navbar
+        selectedItemColor: const Color(0xFF6BAAFC), // Warna ikon aktif (Biru Langit)
+        unselectedItemColor: Colors.grey,    // Warna ikon tidak aktif
+        showUnselectedLabels: true,          // Tampilkan label meski tidak dipilih
+        // ------------------------------
+        
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),

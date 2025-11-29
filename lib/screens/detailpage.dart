@@ -6,9 +6,10 @@ import 'package:meteo/helpers/weather_helper.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:meteo/services/dbservices.dart';
 
+// --- PALET WARNA ---
 const Color kBgTop = Color(0xFF6BAAFC);
 const Color kBgBottom = Color(0xFF3F82E8);
-const Color kCardBg = Color(0x25FFFFFF);
+const Color kCardBg = Color(0x25FFFFFF); // Efek Kaca
 const Color kTextWhite = Colors.white;
 const Color kTextGrey = Color(0xFFD4E4FF);
 const Color kAccentBlue = Color(0xFFB3D4FF);
@@ -28,6 +29,7 @@ class _DetailPageState extends State<DetailPage> {
   bool _isLoading = true;
   String _errorMessage = '';
   String _locationName = "Loading...";
+  
   final DBService _dbService = DBService();
   bool _isBookmarked = false;
 
@@ -37,51 +39,97 @@ class _DetailPageState extends State<DetailPage> {
   void initState() {
     super.initState();
     _loadWeatherData();
+    // Cek status bookmark di awal
     _checkBookmarkStatus();
   }
 
+  // --- CEK STATUS BOOKMARK ---
   Future<void> _checkBookmarkStatus() async {
-    double lat = double.parse(widget.loc['lat'].toString());
-    double lon = double.parse(widget.loc['lon'].toString());
-    bool exists = await _dbService.isBookmarked(lat, lon);
-    setState(() {
-      _isBookmarked = exists;
-    });
+    try {
+      double lat = double.parse(widget.loc['lat'].toString());
+      double lon = double.parse(widget.loc['lon'].toString());
+      bool exists = await _dbService.isBookmarked(lat, lon);
+      if (mounted) {
+        setState(() {
+          _isBookmarked = exists;
+        });
+      }
+    } catch (e) {
+      print("Error checking bookmark: $e");
+    }
   }
 
+  // --- KLIK TOMBOL BOOKMARK ---
   void _toggleBookmark() async {
-    double lat = double.parse(widget.loc['lat'].toString());
-    double lon = double.parse(widget.loc['lon'].toString());
-
-    List<String> parts = _locationName.split(',');
-    String name = parts[0].trim();
-    String country = parts.length > 1 ? parts[1].trim() : "";
-
-    LocationModel locationData = LocationModel(
-      name: name,
-      country: country,
-      latitude: lat,
-      longitude: lon, timezone: '',
-    );
-    
-    if (_isBookmarked) {
-      await _dbService.removeBookmark(lat, lon);
-      if(mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Removed from saved locations")));
-      }
-    } else {
-      await _dbService.addBookmark(locationData);
-      if(mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Location saved!")));
-      }
+    // 1. Validasi: Jangan simpan kalau data belum siap
+    if (_locationName == "Loading..." || _locationName == "Unknown Location") {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Tunggu sebentar, sedang memuat lokasi...")),
+      );
+      return;
     }
 
-    setState(() {
-      _isBookmarked = !_isBookmarked;
-    });
+    try {
+      double lat = double.parse(widget.loc['lat'].toString());
+      double lon = double.parse(widget.loc['lon'].toString());
+
+      // Logic pemisahan Nama Kota & Negara
+      String name = _locationName;
+      String country = "";
+      if (_locationName.contains(',')) {
+        List<String> parts = _locationName.split(',');
+        name = parts[0].trim();
+        country = parts.length > 1 ? parts[1].trim() : "";
+      }
+
+      // Buat Object Model
+      LocationModel locationData = LocationModel(
+        name: name,
+        country: country,
+        latitude: lat,
+        longitude: lon,
+        timezone: '', // Tidak dipakai di bookmark
+      );
+
+      if (_isBookmarked) {
+        // HAPUS
+        await _dbService.removeBookmark(lat, lon);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Dihapus dari simpanan"),
+              backgroundColor: Colors.redAccent,
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+      } else {
+        // SIMPAN
+        await _dbService.addBookmark(locationData);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Lokasi berhasil disimpan!"),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+      }
+
+      // Update Ikon
+      setState(() {
+        _isBookmarked = !_isBookmarked;
+      });
+    } catch (e) {
+      print("Gagal toggle bookmark: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal menyimpan: $e")),
+      );
+    }
   }
 
-  // --- Fungsi Load Data ---
+  // --- LOAD DATA CUACA ---
   Future<void> _loadWeatherData() async {
     try {
       // 1. Ambil Lat/Lon dari Parameter
@@ -155,10 +203,28 @@ class _DetailPageState extends State<DetailPage> {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
-            child: Text(
-              _errorMessage,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 50),
+                const SizedBox(height: 16),
+                Text(
+                  _errorMessage,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _isLoading = true;
+                      _errorMessage = '';
+                    });
+                    _loadWeatherData();
+                  },
+                  child: const Text("Coba Lagi"),
+                )
+              ],
             ),
           ),
         ),
@@ -395,8 +461,8 @@ class _DetailPageState extends State<DetailPage> {
             unit: "",
             subtitle: aqi < 50 ? "Good" : "Moderate",
             visualContent: Icon(
-              Icons.grain,
-              color: aqi < 50 ? Colors.green : Colors.orange,
+              Icons.blur_on,
+              color: Colors.white38,
               size: iconSize,
             ),
           ),
@@ -416,6 +482,7 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
+  // --- MATAHARI BERGERAK SESUAI JAM ---
   Widget _buildSunriseSunsetCard() {
     if (_weather == null ||
         _weather!.daily.sunrise.isEmpty ||
@@ -427,15 +494,16 @@ class _DetailPageState extends State<DetailPage> {
     final DateTime sunsetTime = DateTime.parse(_weather!.daily.sunset[0]);
     final DateTime now = DateTime.now();
 
-    double alignX = -1.0;
+    double alignX = -1.0; // Default di kiri (sebelum terbit)
 
     if (now.isAfter(sunriseTime) && now.isBefore(sunsetTime)) {
+      // Logic pergerakan
       int totalDayMinutes = sunsetTime.difference(sunriseTime).inMinutes;
       int passedMinutes = now.difference(sunriseTime).inMinutes;
       double progress = passedMinutes / totalDayMinutes;
-      alignX = (progress * 2) - 1;
+      alignX = (progress * 2) - 1; // Range -1.0 s/d 1.0
     } else if (now.isAfter(sunsetTime)) {
-      alignX = 1.0;
+      alignX = 1.0; // Mentok kanan (terbenam)
     }
 
     String sunriseText = WeatherUtils.formatTime(_weather!.daily.sunrise[0]);
@@ -456,10 +524,7 @@ class _DetailPageState extends State<DetailPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Sunrise",
-                    style: TextStyle(color: kTextGrey, fontSize: 12),
-                  ),
+                  const Text("Sunrise", style: TextStyle(color: kTextGrey, fontSize: 12)),
                   const SizedBox(height: 4),
                   Text(
                     sunriseText,
@@ -504,10 +569,7 @@ class _DetailPageState extends State<DetailPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text(
-                    "Sunset",
-                    style: TextStyle(color: kTextGrey, fontSize: 12),
-                  ),
+                  const Text("Sunset", style: TextStyle(color: kTextGrey, fontSize: 12)),
                   const SizedBox(height: 4),
                   Text(
                     sunsetText,
