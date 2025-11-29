@@ -48,7 +48,9 @@ class DBService {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT,
             email TEXT UNIQUE, 
-            password TEXT
+            password TEXT,
+            tempUnit TEXT DEFAULT 'c',
+            photoPath TEXT
           )
         ''');
       },
@@ -153,6 +155,22 @@ class DBService {
       conflictAlgorithm: ConflictAlgorithm.rollback,
     );
   }
+
+  Future<UserModel?> getUser() async {
+    final db = await database;
+    final res = await db.query(
+      'users',
+      orderBy: 'id DESC',
+      limit: 1, // ambil user terakhir yang dibuat / login
+    );
+
+    if (res.isNotEmpty) {
+      return UserModel.fromMap(res.first);
+    }
+    return null;
+  }
+
+
   Future<void> addBookmark(LocationModel location) async {
     final db = await database;
     try {

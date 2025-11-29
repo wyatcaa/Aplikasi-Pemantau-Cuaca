@@ -94,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Selamat Datang Kembali 🌊", 
+              "Selamat Datang Kembali 🌦️", 
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
@@ -103,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Masuk untuk melanjutkan eksplorasi data kelautan", 
+              "Masuk untuk melihat informasi cuaca terkini!", 
               style: TextStyle(
                 color: Colors.grey.shade700,
                 fontSize: 14,

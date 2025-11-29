@@ -62,6 +62,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       username: usernameC.text.trim(),
       email: emailC.text.trim(),
       password: hashed,
+      photoPath: null,
+      tempUnit: "C", 
     );
 
     await _dbService.registerUser(user);
@@ -85,12 +87,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       backgroundColor: Colors.white, 
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 80),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Buat Akun Baru 🌊", 
+              "Buat Akun Baru 🌦️", 
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -99,7 +101,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Bergabung untuk melihat informasi kelautan!", 
+              "Gabung untuk melihat informasi cuaca akurat!", 
               style: TextStyle(color: Colors.grey.shade700, fontSize: 14), 
             ),
             const SizedBox(height: 40),

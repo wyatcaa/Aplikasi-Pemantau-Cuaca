@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:meteo/helpers/temp_converter.dart';
 import 'package:meteo/models/weather_model.dart';
 import 'package:meteo/screens/detailpage.dart';
 import 'package:meteo/services/apiservices.dart';
@@ -6,6 +7,12 @@ import 'package:meteo/helpers/weather_helper.dart';
 // Package tambahan untuk Lokasi
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import '../services/dbservices.dart';
+import '../models/user_model.dart';
+
+UserModel? user;
+String _selectedUnit = "c";
+
 
 // --- PALET WARNA (SOFT SKY BLUE GRADIENT) ---
 const Color kBgTop = Color(0xFF6BAAFC); // Biru Langit Cerah
@@ -37,6 +44,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _loadWeatherData();
+    _loadUserUnit(); 
   }
 
   // --- 1. Fungsi Cek Izin & Ambil Koordinat GPS ---
@@ -112,6 +120,21 @@ class _HomePageState extends State<HomePage> {
       });
     }
   }
+
+  Future<void> _loadUserUnit() async {
+  try {
+    user = await DBService().getUser();
+    if (user != null) {
+      setState(() {
+        _selectedUnit = user!.tempUnit; // atau _selectedUnit = user!.tempUnit;
+      });
+    }
+  } catch (e) {
+    // optional: handle error
+  }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -229,6 +252,31 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildHeaderSection() {
     final current = _weather!.current;
+    final unit = _selectedUnit; // C/F atau unit dari settings
+
+  final displayTemp = TempConverter.convert(
+  value: current.temp,
+  from: "c",
+  to: unit,
+).round();
+
+final feelsTemp = TempConverter.convert(
+  value: current.feelsLike,
+  from: "c",
+  to: unit,
+).round();
+
+final maxTemp = TempConverter.convert(
+  value: _weather!.daily.tempMax[0],
+  from: "c",
+  to: unit,
+).round();
+
+final minTemp = TempConverter.convert(
+  value: _weather!.daily.tempMin[0],
+  from: "c",
+  to: unit,
+).round();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
@@ -240,7 +288,7 @@ class _HomePageState extends State<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                current.temp.round().toString(),
+              "$displayTemp°",
                 style: const TextStyle(
                   color: kTextWhite,
                   fontSize: 80,
@@ -259,7 +307,7 @@ class _HomePageState extends State<HomePage> {
                   const Icon(Icons.cloud, color: kAccentYellow, size: 40),
                   const SizedBox(height: 8),
                   Text(
-                    "Feels like ${current.feelsLike.round()}°",
+                    "$displayTemp°",
                     textAlign: TextAlign.end,
                     style: const TextStyle(color: kTextGrey, fontSize: 14),
                   ),

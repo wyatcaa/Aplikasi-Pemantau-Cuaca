@@ -23,7 +23,7 @@ class _SearchLocationWidgetState extends State<SearchLocationWidget> {
   }
 
   void _clearIfEmpty() {
-      if (_ctrl.text.isEmpty && _results.isNotEmpty) {
+    if (_ctrl.text.isEmpty && _results.isNotEmpty) {
       setState(() {
         _results = [];
       });
@@ -38,17 +38,18 @@ class _SearchLocationWidgetState extends State<SearchLocationWidget> {
   }
 
   void _search(String q) async {
-    FocusScope.of(context).unfocus();
-
     if (q.trim().isEmpty) {
       setState(() => _results = []);
       return;
     }
+
     setState(() {
       _loading = true;
       _results = [];
     });
+
     final res = await _service.search(q, count: 8);
+
     setState(() {
       _results = res;
       _loading = false;
@@ -57,20 +58,18 @@ class _SearchLocationWidgetState extends State<SearchLocationWidget> {
 
   @override
   Widget build(BuildContext context) {
-
     return Column(
       children: [
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white, 
-                  borderRadius: BorderRadius.circular(30), 
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.3), 
+                      color: Colors.grey.withOpacity(0.3),
                       spreadRadius: 1,
                       blurRadius: 5,
                       offset: const Offset(0, 3),
@@ -79,28 +78,29 @@ class _SearchLocationWidgetState extends State<SearchLocationWidget> {
                 ),
                 child: TextField(
                   controller: _ctrl,
-                  style: TextStyle(color: Colors.black87), 
+                  style: const TextStyle(color: Colors.black87),
                   decoration: InputDecoration(
-                    hintText: 'Cari lokasi', 
+                    hintText: 'Cari lokasi',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
                       borderSide: BorderSide.none,
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide(color: Color(0xFF0077B6), width: 2), 
+                      borderSide: const BorderSide(color: Color(0xFF0077B6), width: 2),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide(color: Colors.grey.shade300, width: 1), 
+                      borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16), 
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 14, horizontal: 16),
                   ),
                   onSubmitted: _search,
                 ),
               ),
             ),
-            
+
             const SizedBox(width: 8),
 
             SizedBox(
@@ -108,26 +108,25 @@ class _SearchLocationWidgetState extends State<SearchLocationWidget> {
               child: ElevatedButton(
                 onPressed: () => _search(_ctrl.text),
                 style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.zero,
                   shape: const CircleBorder(),
-                  backgroundColor: Color(0xFF0077B6),
+                  backgroundColor: Color(0xFF6BAAFC),
                   elevation: 4,
-                  minimumSize: Size(48, 48), 
+                  minimumSize: const Size(48, 48),
                 ),
                 child: const Icon(Icons.search, color: Colors.white),
               ),
             ),
           ],
         ),
-        
+
         const SizedBox(height: 8),
-        if (_loading) LinearProgressIndicator(color: Color(0xFF0077B6)), 
+        if (_loading) const LinearProgressIndicator(color: Color(0xFF0077B6)),
 
         if (!_loading && _results.isNotEmpty)
           Container(
             margin: const EdgeInsets.only(top: 8),
             decoration: BoxDecoration(
-              color: Colors.white, 
+              color: Colors.white,
               border: Border.all(color: Colors.grey.shade300),
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
@@ -146,16 +145,14 @@ class _SearchLocationWidgetState extends State<SearchLocationWidget> {
                 final r = _results[idx];
                 final display =
                     '${r['name'] ?? ''}, ${r['admin1'] ?? ''} ${r['country'] ?? ''}';
+
                 return ListTile(
-                  title: Text(display.trim(), style: TextStyle(color: Colors.black87)),
-                  subtitle: Text(
-                    'lat: ${r['latitude']}, lon: ${r['longitude']}, tz: ${r['timezone']}',
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
+                  title:
+                      Text(display.trim(), style: const TextStyle(color: Colors.black87)),
                   onTap: () {
                     final loc = LocationModel.fromGeocodingJson(r);
                     widget.onSelect(loc);
-                    setState(() => _results = []); 
+                    setState(() => _results = []);
                   },
                 );
               },

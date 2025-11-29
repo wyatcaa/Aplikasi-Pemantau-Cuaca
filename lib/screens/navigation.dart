@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:meteo/screens/homepage.dart';
 import 'package:meteo/screens/savedpage.dart';
 import 'package:meteo/screens/searchpage.dart';
+import 'package:meteo/screens/profilpage.dart';
 
 class Navigation extends StatefulWidget {
   const Navigation({super.key});
@@ -12,7 +13,7 @@ class Navigation extends StatefulWidget {
 
 class _NavigationState extends State<Navigation> {
   int _currentIndex = 0;
-  final List<Widget> _pages = [HomePage(),SearchScreen(), SavedPage()];
+  final List<Widget> _pages = [HomePage(),SearchScreen(), SavedPage(), ProfilePage()];
 
   @override
   Widget build(BuildContext context) {
@@ -29,8 +30,10 @@ class _NavigationState extends State<Navigation> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
           BottomNavigationBarItem(icon: Icon(Icons.bookmark), label: "Saved"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
     );
   }
 }
+
