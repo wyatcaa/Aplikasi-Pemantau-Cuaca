@@ -202,9 +202,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // -------------------------------
-  // ** FIELD EDITABLE FIX**
-  // -------------------------------
   Widget _buildEditableField({
     required String label,
     required TextEditingController controller,
@@ -214,7 +211,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }) {
     return TextField(
       controller: controller,
-      readOnly: true, // <-- memperbaiki: sekarang bisa di-tap
+      readOnly: true, 
       obscureText: obscureText,
       obscuringCharacter: '•',
       style: const TextStyle(color: kTextWhite, fontWeight: FontWeight.w600),

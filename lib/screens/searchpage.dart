@@ -40,7 +40,6 @@ class _SearchScreenState extends State<SearchScreen> {
     _loadHistory();
   }
 
-  // Load unit suhu dari profil user
   Future<void> _loadUserUnit() async {
     try {
       final user = await _dbService.getUser();
@@ -52,7 +51,6 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  // Load riwayat lokasi
   void _loadHistory() async {
     final history = await _dbService.getLocations();
     if (!mounted) return;
@@ -63,7 +61,6 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  // Ambil suhu untuk masing-masing lokasi di riwayat
   Future<void> _fetchTemperatureForHistory(LocationModel loc) async {
     final key = "${loc.latitude}_${loc.longitude}";
     if (_tempCache.containsKey(key)) return;
@@ -85,7 +82,6 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  // Saat user memilih lokasi
   void _onSelect(LocationModel loc) async {
     await _dbService.saveLocation(loc);
     _loadHistory();
@@ -103,7 +99,6 @@ class _SearchScreenState extends State<SearchScreen> {
     if (mounted) setState(() => _selected = null);
   }
 
-  // Hapus semua riwayat
   void _clearHistory() async {
     await _dbService.clearAllHistory();
     setState(() {
@@ -146,8 +141,6 @@ class _SearchScreenState extends State<SearchScreen> {
                   const SizedBox(height: 8),
                   SearchLocationWidget(onSelect: _onSelect),
                   const SizedBox(height: 24),
-
-                  // --- Riwayat Pencarian ---
                   if (_history.isNotEmpty) ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -227,7 +220,6 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                     const SizedBox(height: 12),
                   ] else ...[
-                    // --- Teks jika riwayat kosong ---
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 200),

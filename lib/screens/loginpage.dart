@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:crypto/crypto.dart';
+import 'package:crypto/crypto.dart'; 
 import 'package:meteo/screens/navigation.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,8 +22,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _isPasswordVisible = false;
 
-  final Color _darkBlue = const Color(0xFF132856); 
-  final Color _accentBlue = const Color(0xFF1BC2EE); 
+  final Color _darkBlue = const Color(0xFF132856);
+  final Color _accentBlue = const Color(0xFF1BC2EE);
 
   @override
   void dispose() {
@@ -49,6 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     String hashed = sha256.convert(utf8.encode(passC.text)).toString();
+    
     UserModel? user = await _dbService.loginUser(emailC.text.trim(), hashed);
 
     setState(() {
@@ -57,10 +58,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (user != null) {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isLoggedIn', true);
-      await prefs.setInt('currentUserId', user.id ?? 0); 
+      await prefs.setBool('is_logged_in', true); 
+            await prefs.setInt('currentUserId', user.id ?? 0);
       await prefs.setString('currentUsername', user.username);
-      
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -94,16 +95,16 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Selamat Datang Kembali 🌦️", 
+              "Selamat Datang Kembali 🌦️",
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
-                color: _darkBlue, 
+                color: _darkBlue,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              "Login untuk melihat informasi cuaca terkini!", 
+              "Login untuk melihat informasi cuaca terkini!",
               style: TextStyle(
                 color: Colors.grey.shade700,
                 fontSize: 14,
@@ -118,10 +119,10 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 8),
             TextField(
               controller: emailC,
-              style: TextStyle(color: Colors.black),
+              style: const TextStyle(color: Colors.black),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Colors.blue.shade50, 
+                fillColor: Colors.blue.shade50,
                 hintText: "nama@email.com",
                 hintStyle: TextStyle(color: Colors.grey[500]),
                 border: OutlineInputBorder(
@@ -145,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
             TextField(
               controller: passC,
               obscureText: !_isPasswordVisible,
-              style: TextStyle(color: Colors.black),
+              style: const TextStyle(color: Colors.black),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.blue.shade50,
@@ -162,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 suffixIcon: IconButton(
                   icon: Icon(
                     _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                    color: Colors.grey[600], 
+                    color: Colors.grey[600],
                   ),
                   onPressed: () {
                     setState(() {
@@ -181,7 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _login,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _accentBlue, 
+                  backgroundColor: _accentBlue,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -208,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Text(
                   "Belum punya akun? Daftar di sini",
                   style: TextStyle(
-                    color: _darkBlue, 
+                    color: _darkBlue,
                     fontSize: 14,
                   ),
                 ),

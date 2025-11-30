@@ -61,23 +61,29 @@ class HourlyWeather {
   final List<String> time;
   final List<double> temperature;
   final List<double> precipitation;
+  final List<double> windSpeed;
+  final List<double> humidity;
 
   HourlyWeather({
     required this.time,
     required this.temperature,
     required this.precipitation,
+    required this.windSpeed,
+    required this.humidity,
   });
 
   factory HourlyWeather.fromJson(Map<String, dynamic> json) {
+    List<double> safeConvert(dynamic input) {
+      if (input == null || input is! List) return [];
+      return input.map((e) => (e as num).toDouble()).toList();
+    }
+
     return HourlyWeather(
       time: List<String>.from(json['time'] ?? []),
-      temperature: List<double>.from(
-        json['temperature_2m']?.map((x) => x?.toDouble() ?? 0.0) ?? [],
-      ),
-      precipitation: List<double>.from(
-        json['precipitation_probability']?.map((x) => x?.toDouble() ?? 0.0) ??
-            [],
-      ),
+      temperature: safeConvert(json['temperature_2m']),
+      precipitation: safeConvert(json['precipitation_probability']),
+      windSpeed: safeConvert(json['wind_speed_10m']),
+      humidity: safeConvert(json['relative_humidity_2m']),
     );
   }
 }

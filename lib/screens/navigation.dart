@@ -31,13 +31,11 @@ class _NavigationState extends State<Navigation> {
             _currentIndex = index;
           });
         },
-        // --- TAMBAHKAN PROPERTI INI ---
-        type: BottomNavigationBarType.fixed, // Wajib biar gak putih/hilang
-        backgroundColor: Colors.white,       // Warna latar belakang navbar
-        selectedItemColor: const Color(0xFF6BAAFC), // Warna ikon aktif (Biru Langit)
-        unselectedItemColor: Colors.grey,    // Warna ikon tidak aktif
-        showUnselectedLabels: true,          // Tampilkan label meski tidak dipilih
-        // ------------------------------
+        type: BottomNavigationBarType.fixed, 
+        backgroundColor: Colors.white,       
+        selectedItemColor: const Color(0xFF6BAAFC), 
+        unselectedItemColor: Colors.grey,  
+        showUnselectedLabels: true,        
         
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
