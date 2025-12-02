@@ -168,52 +168,55 @@ class _SearchScreenState extends State<SearchScreen> {
                             ? TempConverter.convert(value: temp, from: "c", to: _selectedUnit).round()
                             : null;
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: kCardBg,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.history, color: kTextWhite),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  '${loc.name}, ${loc.country}',
-                                  style: const TextStyle(
-                                    color: kTextWhite,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                        return GestureDetector(
+                          onTap: () => _onSelect(loc),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: kCardBg,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.history, color: kTextWhite),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    '${loc.name}, ${loc.country}',
+                                    style: const TextStyle(
+                                      color: kTextWhite,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              if (isLoading)
-                                const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: kAccentYellow),
-                                )
-                              else if (displayTemp != null)
-                                Text(
-                                  '$displayTemp°${_selectedUnit.toUpperCase()}',
-                                  style: const TextStyle(
-                                    color: kAccentYellow,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+                                if (isLoading)
+                                  const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2, color: kAccentYellow),
+                                  )
+                                else if (displayTemp != null)
+                                  Text(
+                                    '$displayTemp°${_selectedUnit.toUpperCase()}',
+                                    style: const TextStyle(
+                                      color: kAccentYellow,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                ),
-                            ],
+                              ],
+                            ),
                           ),
                         );
                       }).toList(),
